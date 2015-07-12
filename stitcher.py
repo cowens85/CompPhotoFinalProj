@@ -170,6 +170,8 @@ class AlignImagesRansac(object):
                 continue
 
             # Read in the next image...
+            print "Image path:"
+            print next_img_path
             next_img_rgb = cv2.imread(next_img_path)
             next_img = cv2.GaussianBlur(cv2.cvtColor(next_img_rgb,cv2.COLOR_BGR2GRAY), (5,5), 0)
 
@@ -355,5 +357,5 @@ class AlignImagesRansac(object):
 
  # ----------------------------------------------------------------------------
 if __name__ == '__main__':
-    AlignImagesRansac("images/pano/", "images/pano/P7120060.jpg", "images/output/")
+    AlignImagesRansac("images/pano/", "images/pano/P7120006.jpg", "images/output/")
 
