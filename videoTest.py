@@ -17,7 +17,7 @@ except ImportError:
                                  % cv2.__version__)
 
 def drawAroundBanana():
-    cap = cv2.VideoCapture("video/banana_still_2.m4v")
+    cap = cv2.VideoCapture("video/banan.m4v")
     fps = 60
     #capSize = gray.shape # this is the size of my source video
     size = (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)))

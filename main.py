@@ -17,7 +17,7 @@ except ImportError:
                                  % cv2.__version__)
 
 def drawAroundBanana():
-    imagePath = "images/source/banana.jpg"
+    imagePath = "images/source/foo.jpg"
     cascPath = "cascade/banana_classifier.xml"
 
     cascade = cv2.CascadeClassifier(cascPath)
