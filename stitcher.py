@@ -186,9 +186,17 @@ class AlignImagesRansac(object):
 
             matches = matcher.knnMatch(next_descs, trainDescriptors=base_descs, k=2)
 
+            if len(matches) < 4:
+                continue
+
+            print "Valid image:"
+            print next_img_path
+
             print "\t Match Count: ", len(matches)
 
             matches_subset = self.filter_matches(matches)
+            if len(matches_subset) < 4:
+                continue
 
             print "\t Filtered Match Count: ", len(matches_subset)
 
@@ -209,10 +217,10 @@ class AlignImagesRansac(object):
 
             p1 = np.array([k.pt for k in kp1])
             p2 = np.array([k.pt for k in kp2])
-            #
-            # if len(p1) < 4 or len(p2 < 4):
-            #     print "bad frame: " + next_img_path
-            #     continue
+
+            if len(p1) < 4 or len(p2 < 4):
+                print "bad frame: " + next_img_path
+                continue
 
             print "p1 size = " + str(len(p1)) + "  p2 size = " + str(len(p2))
             H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
@@ -233,6 +241,10 @@ class AlignImagesRansac(object):
                 closestImage['desc'] = next_descs
                 closestImage['match'] = matches_subset
             break
+
+        if closestImage == None:
+            return
+
         print "Closest Image: ", closestImage['path']
         print "Closest Image Ratio: ", closestImage['inliers']
 
@@ -362,5 +374,5 @@ class AlignImagesRansac(object):
 
  # ----------------------------------------------------------------------------
 if __name__ == '__main__':
-    AlignImagesRansac("images/pano/", "images/pano/P7120006.jpg", "images/output/")
+    AlignImagesRansac("images/temp/leftFrames/", "images/temp/leftFrames/left_050.png", "images/output/")
 
