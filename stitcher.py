@@ -209,7 +209,12 @@ class AlignImagesRansac(object):
 
             p1 = np.array([k.pt for k in kp1])
             p2 = np.array([k.pt for k in kp2])
+            #
+            # if len(p1) < 4 or len(p2 < 4):
+            #     print "bad frame: " + next_img_path
+            #     continue
 
+            print "p1 size = " + str(len(p1)) + "  p2 size = " + str(len(p2))
             H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
             print '%d / %d  inliers/matched' % (np.sum(status), len(status))
 
@@ -227,7 +232,7 @@ class AlignImagesRansac(object):
                 closestImage['feat'] = next_features
                 closestImage['desc'] = next_descs
                 closestImage['match'] = matches_subset
-
+            break
         print "Closest Image: ", closestImage['path']
         print "Closest Image Ratio: ", closestImage['inliers']
 
