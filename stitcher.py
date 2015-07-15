@@ -187,6 +187,7 @@ class AlignImagesRansac(object):
             matches = matcher.knnMatch(next_descs, trainDescriptors=base_descs, k=2)
 
             if len(matches) < 4:
+                print "\t Skipping %s..." % self.key_frame_file
                 continue
 
             print "Valid image:"
@@ -194,8 +195,9 @@ class AlignImagesRansac(object):
 
             print "\t Match Count: ", len(matches)
 
-            matches_subset = self.filter_matches(matches)
+            matches_subset = self.filter_matches(matches, 1.5)
             if len(matches_subset) < 4:
+                print "\t Skipping %s..." % self.key_frame_file
                 continue
 
             print "\t Filtered Match Count: ", len(matches_subset)
@@ -218,9 +220,9 @@ class AlignImagesRansac(object):
             p1 = np.array([k.pt for k in kp1])
             p2 = np.array([k.pt for k in kp2])
 
-            if len(p1) < 4 or len(p2 < 4):
-                print "bad frame: " + next_img_path
-                continue
+            # if len(p1) < 4 or len(p2 < 4):
+            #     print "bad frame: " + next_img_path
+            #     continue
 
             print "p1 size = " + str(len(p1)) + "  p2 size = " + str(len(p2))
             H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)

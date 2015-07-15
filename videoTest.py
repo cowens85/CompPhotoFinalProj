@@ -17,8 +17,8 @@ except ImportError:
             raise AttributeError("Your OpenCV(%s) doesn't have SIFT / ORB."
                                  % cv2.__version__)
 
-def drawAroundBanana():
-    cap = cv2.VideoCapture("video/banan.m4v")
+def drawAroundBanana(videoPath, classifierPath, scale, minNeighbor):
+    cap = cv2.VideoCapture(videoPath)
     fps = 60
     #capSize = gray.shape # this is the size of my source video
     size = (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)))
@@ -26,9 +26,6 @@ def drawAroundBanana():
     vout = cv2.VideoWriter()
     success = vout.open('video/output_banana_through_still_2.mov',fourcc,fps,size,False)
     background = None
-    prevObj = None
-    objDict = {}
-    leftFrames = []
     while(True):
         # Capture frame-by-frame
         ret, frame = cap.read()
@@ -41,16 +38,16 @@ def drawAroundBanana():
 
         # Our operations on the frame come here
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cascPath = "cascade/banana_classifier.xml"
 
-        cascade = cv2.CascadeClassifier(cascPath)
+
+        cascade = cv2.CascadeClassifier(classifierPath)
         # Detect object in the image
 
         faces = cascade.detectMultiScale(
             gray,
-            scaleFactor=2.6,
-            minNeighbors=1,
-            minSize=(200, 200),
+            scaleFactor=scale,
+            minNeighbors=minNeighbor,
+            minSize=(50, 50),
             flags = cv2.cv.CV_HAAR_SCALE_IMAGE
         )
 
@@ -60,15 +57,15 @@ def drawAroundBanana():
 
        # Draw a rectangle around the faces
         for (x, y, w, h) in faces:
-            cv2.rectangle(gray, (x-30, y-150), (x+60+w, y+h+50), (0, 255, 0), 2)
-            newFrame[y-150:y+h+50, x:x+w] = frame[y-150:y+h+50, x:x+w]
-            break
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            newFrame[y:y+h, x:x+w] = frame[y:y+h, x:x+w]
+
 
 
 
 
         # Display the resulting frame
-        cv2.imshow('frame', newFrame)
+        cv2.imshow('frame', frame)
         if len(faces) > 0:
             vout.write(newFrame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -82,13 +79,12 @@ def drawAroundBanana():
 
 
 
-def countBananaFrames():
+def countObjectFrames(videoPath, classifierPath, maxScale, maxNeighbors):
     highestValue = (0,0,0)
     scale = 1.1
-    minNeighbor = 0
-    while(scale < 3.0):
-        for minNeighbor in range(0, 5):
-            cap = cv2.VideoCapture("video/banan.m4v")
+    while(scale <= maxScale):
+        for minNeighbor in range(1, maxNeighbors+1):
+            cap = cv2.VideoCapture(videoPath)
             counter = 0
             while(True):
                 # Capture frame-by-frame
@@ -98,16 +94,14 @@ def countBananaFrames():
 
                 # Our operations on the frame come here
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                cascPath = "cascade/banana_classifier.xml"
-
-                cascade = cv2.CascadeClassifier(cascPath)
+                cascade = cv2.CascadeClassifier(classifierPath)
                 # Detect object in the image
 
                 faces = cascade.detectMultiScale(
                     gray,
                     scaleFactor=scale,
                     minNeighbors=minNeighbor,
-                    minSize=(200, 200),
+                    minSize=(50, 50),
                     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
                 )
                 if len(faces) == 1:
@@ -121,14 +115,13 @@ def countBananaFrames():
             cv2.destroyAllWindows()
         scale += .1
         print highestValue
+    return (highestValue[1], highestValue[2])
 
 
-def findAverageCenter():
+def findAverageCenter(videoPath,classifierPath, scale, minNeighbor):
     highestValue = (0,0,0)
-    scale = 2.6
-    minNeighbor = 1
 
-    cap = cv2.VideoCapture("video/banan.m4v")
+    cap = cv2.VideoCapture(videoPath)
     counter = 0
     x = 0
     y = 0
@@ -142,18 +135,18 @@ def findAverageCenter():
 
         # Our operations on the frame come here
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cascPath = "cascade/banana_classifier.xml"
 
-        cascade = cv2.CascadeClassifier(cascPath)
+        cascade = cv2.CascadeClassifier(classifierPath)
         # Detect object in the image
 
         faces = cascade.detectMultiScale(
             gray,
             scaleFactor=scale,
             minNeighbors=minNeighbor,
-            minSize=(200, 200),
+            minSize=(50, 50),
             flags = cv2.cv.CV_HAAR_SCALE_IMAGE
         )
+
         if len(faces) == 1:
             counter+=1
             x += faces[0][0]
@@ -162,26 +155,22 @@ def findAverageCenter():
             h += faces[0][3]
 
 
-    print str((x/counter, y/counter, w/counter, h/counter))
-
+    data = (x/counter, y/counter, w/counter, h/counter)
+    print str(data)
 
     cap.release()
     cv2.destroyAllWindows()
 
-def drawAroundCenterPoint():
-    cap = cv2.VideoCapture("video/banan.m4v")
-    fps = 60
-    #capSize = gray.shape # this is the size of my source video
-    size = (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)))
-    fourcc = cv2.cv.CV_FOURCC('m', 'p', '4', 'v') # note the lower case
-    vout = cv2.VideoWriter()
-    success = vout.open('video/output_banana_through_still_2.mov',fourcc,fps,size,False)
-    background = None
-    prevObj = None
-    objDict = {}
-    leftFrames = []
+    return data
 
+
+def drawAroundCenterPoint(videoPath, x, y, w, h):
+    cap = cv2.VideoCapture(videoPath)
+    vout = cv2.VideoWriter()
+    background = None
+    leftFrames = []
     rightFrames =[]
+    expansionDelta = 100
     counter = 0
     while(True):
         counter += 1
@@ -194,46 +183,36 @@ def drawAroundCenterPoint():
             print "Set background"
             background = frame
 
-        # Our operations on the frame come here
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cascPath = "cascade/banana_classifier.xml"
-
-        cascade = cv2.CascadeClassifier(cascPath)
-        # Detect object in the image
-
-        faces = cascade.detectMultiScale(
-            gray,
-            scaleFactor=2.6,
-            minNeighbors=1,
-            minSize=(200, 200),
-            flags = cv2.cv.CV_HAAR_SCALE_IMAGE
-        )
-
-        print "Found {0} objects!".format(len(faces))
-
-        newFrame = background.copy()
 
        # Draw a rectangle around the faces
-        x = 251
-        y = 378
-        w = 541
-        h = 270
-        #cv2.rectangle(frame, (x-20, y-20), (x+20+w, y+20+h), (0, 255, 0), 2)
+        startPoint = (x-expansionDelta, y-expansionDelta)
+        endPoint = (min(frame.shape[1],x+expansionDelta+w), min(frame.shape[0],y+expansionDelta+h))
+        #cv2.rectangle(frame, startPoint, endPoint, (0, 255, 0), 2)
 
-        leftFrame = (frame[0:frame.shape[0], 0:x-20])
-        rightFrame = (frame[0:frame.shape[0], x+20+w:frame.shape[1]])
+        # determine the max size of the 'cut frames' - this is the maximum rectangle we can make left and
+        # right of the banana.  This way we get the same size image to create the panorama.
+        maxWidth = min(startPoint[0], frame.shape[1] - endPoint[0])
+
+
+        leftFrame = (frame[0:frame.shape[0], 0:maxWidth])
+        rightFrame = (frame[0:frame.shape[0], frame.shape[1] - maxWidth:frame.shape[1]])
 
         leftFrames.append(leftFrames)
         rightFrames.append(rightFrame)
         # Display the resulting frame
         cv2.imshow('frame', leftFrame)
-        frameCounter ="000"
+        cv2.imshow('frame2', rightFrame)
+        frameCounter = "000"
         if counter < 10:
             frameCounter = "00"+str(counter)
         elif counter < 100:
             frameCounter = "0" + str(counter)
+        elif counter >= 100:
+            frameCounter = str(counter)
 
-        cv2.imwrite("images/temp/leftFrames/left_" +frameCounter+ ".png", leftFrame)
+        if(counter % 5 == 0):
+            cv2.imwrite("images/temp/allFrames/left_" +frameCounter+ ".png", frame)
+            #cv2.imwrite("images/temp/allFrames/right_" + frameCounter + ".png", rightFrame)
         #if len(faces) > 0:
          #   vout.write(frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -245,6 +224,14 @@ def drawAroundCenterPoint():
     vout.release()
     cv2.destroyAllWindows()
 
-#drawAroundCenterPoint()
-stitcher.AlignImagesRansac("images/temp/leftFrames", "images/temp/leftFrames/left_000.png", "images/temp/leftOutput/")
+videoPath = "video/cousin_kitchen.m4v"
+classifierPath = "cascade/haar.xml"
+#result = countObjectFrames(videoPath, classifierPath, 2.0, 5)
+#rect = findAverageCenter(videoPath, classifierPath, result[0], result[1])
+#drawAroundBanana(videoPath, result[0], result[1])
+drawAroundBanana(videoPath,classifierPath, 1.7, 5)
+
+#drawAroundCenterPoint(videoPath, rect[0], rect[1], rect[2], rect[3])
+#drawAroundCenterPoint(videoPath, 504, 467, 447, 223)
+#stitcher.AlignImagesRansac("images/temp/allFrames", "images/temp/allFrames/left_005.png", "images/temp/allFramesOutput/")
 exit(1)
