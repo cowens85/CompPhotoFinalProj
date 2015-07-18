@@ -77,6 +77,26 @@ class AlignImagesRansac(object):
 
         return sumDistance
 
+    def findFace(self, frame):
+        # Our operations on the frame come here
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+        cascade = cv2.CascadeClassifier("cascade/haar.xml")
+        # Detect object in the image
+
+        faces = cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.7,
+            minNeighbors=5,
+            minSize=(50, 50),
+            flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+        )
+
+        print "Found {0} objects!".format(len(faces))
+
+        return faces[0]
+
     def findDimensions(self, image, homography):
         base_p1 = np.ones(3, np.float32)
         base_p2 = np.ones(3, np.float32)
@@ -310,6 +330,21 @@ class AlignImagesRansac(object):
 
             # enlarged_base_img[y:y+base_img_rgb.shape[0],x:x+base_img_rgb.shape[1]] = base_img_rgb
             # enlarged_base_img[:base_img_warp.shape[0],:base_img_warp.shape[1]] = base_img_warp
+
+            find_face = True
+            if find_face:
+                #find face code here
+                x, y, w, h = self.findFace(next_img_warp)
+                addition = 50
+                x = x - addition
+                y = y - addition
+                w = w + (addition * 2)
+                h = h + (addition * 2)
+
+                tmp_image = np.zeros(next_img_warp.shape)
+
+                tmp_image[y:y+h, x:x+w] = next_img_warp[y:y+h, x:x+w]
+                next_img_warp = tmp_image
 
             # Create a mask from the warped image for constructing masked composite
             (ret,data_map) = cv2.threshold(cv2.cvtColor(next_img_warp, cv2.COLOR_BGR2GRAY),
