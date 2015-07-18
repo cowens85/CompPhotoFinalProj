@@ -15,7 +15,7 @@ from numpy import linalg
 
 class AlignImagesRansac(object):
 
-    def __init__(self, image_dir, key_frame, output_dir, img_filter=None):
+    def __init__(self, image_dir, key_frame, output_dir, img_filter=None, find_face=False):
         '''
         image_dir: 'directory' containing all images
         key_frame: 'dir/name.jpg' of the base image
@@ -26,6 +26,7 @@ class AlignImagesRansac(object):
 
         self.key_frame_file = os.path.split(key_frame)[-1]
         self.output_dir = output_dir
+        self.find_face = find_face
 
 
         # Open the directory given in the arguments
@@ -94,8 +95,7 @@ class AlignImagesRansac(object):
         )
 
         print "Found {0} objects!".format(len(faces))
-
-        return faces[0]
+        return faces
 
     def findDimensions(self, image, homography):
         base_p1 = np.ones(3, np.float32)
@@ -331,20 +331,24 @@ class AlignImagesRansac(object):
             # enlarged_base_img[y:y+base_img_rgb.shape[0],x:x+base_img_rgb.shape[1]] = base_img_rgb
             # enlarged_base_img[:base_img_warp.shape[0],:base_img_warp.shape[1]] = base_img_warp
 
-            find_face = True
-            if find_face:
+            if self.find_face:
                 #find face code here
-                x, y, w, h = self.findFace(next_img_warp)
+                faces = self.findFace(next_img_warp)
+                if len(faces) == 0:
+                    return self.stitchImages(base_img_rgb, round+1)
+
+                x, y, w, h = faces[0]
                 addition = 50
                 x = x - addition
                 y = y - addition
                 w = w + (addition * 2)
                 h = h + (addition * 2)
 
-                tmp_image = np.zeros(next_img_warp.shape)
+                tmp_image = np.zeros(next_img_warp.shape).astype(np.uint8)
 
                 tmp_image[y:y+h, x:x+w] = next_img_warp[y:y+h, x:x+w]
                 next_img_warp = tmp_image
+
 
             # Create a mask from the warped image for constructing masked composite
             (ret,data_map) = cv2.threshold(cv2.cvtColor(next_img_warp, cv2.COLOR_BGR2GRAY),
