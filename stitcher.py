@@ -347,6 +347,25 @@ class AlignImagesRansac(object):
             # utils.showImage(base_img_warp, scale=(0.2, 0.2), timeout=5000)
             # cv2.destroyAllWindows()
 
+            if self.face_params is not None:
+                #find face code here
+                faces = self.findFace(closestImage['rgb'])
+                if len(faces) == 0:
+                    cv2.imwrite("images/temp/errar/errar_" + str(round) + ".jpg")
+                    return self.stitchImages(base_img_rgb, round+1)
+
+                x, y, w, h = faces[0]
+                addition = 50
+                x = x - addition
+                y = y - addition
+                w = w + (addition * 2)
+                h = h + (addition * 2)
+
+                tmp_image = np.zeros(closestImage['rgb'].shape).astype(np.uint8)
+
+                tmp_image[y:y+h, x:x+w] = closestImage['rgb'][y:y+h, x:x+w]
+                closestImage['rgb'] = tmp_image
+
             next_img_warp = cv2.warpPerspective(closestImage['rgb'], mod_inv_h, (img_w, img_h))
             print "Warped next image"
 
@@ -362,25 +381,6 @@ class AlignImagesRansac(object):
 
             # enlarged_base_img[y:y+base_img_rgb.shape[0],x:x+base_img_rgb.shape[1]] = base_img_rgb
             # enlarged_base_img[:base_img_warp.shape[0],:base_img_warp.shape[1]] = base_img_warp
-
-            if self.face_params is not None:
-                #find face code here
-                faces = self.findFace(next_img_warp)
-                if len(faces) == 0:
-                    cv2.imwrite("images/temp/errar/errar_" + str(round) + ".jpg")
-                    return self.stitchImages(base_img_rgb, round+1)
-
-                x, y, w, h = faces[0]
-                addition = 50
-                x = x - addition
-                y = y - addition
-                w = w + (addition * 2)
-                h = h + (addition * 2)
-
-                tmp_image = np.zeros(next_img_warp.shape).astype(np.uint8)
-
-                tmp_image[y:y+h, x:x+w] = next_img_warp[y:y+h, x:x+w]
-                next_img_warp = tmp_image
 
 
             # Create a mask from the warped image for constructing masked composite
