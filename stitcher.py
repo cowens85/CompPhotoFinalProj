@@ -15,7 +15,7 @@ from numpy import linalg
 
 class AlignImagesRansac(object):
 
-    def __init__(self, image_dir, key_frame, output_dir, img_filter=None, find_face=False):
+    def __init__(self, image_dir, key_frame, output_dir, img_filter=None, faceParams = None):
         '''
         image_dir: 'directory' containing all images
         key_frame: 'dir/name.jpg' of the base image
@@ -26,7 +26,7 @@ class AlignImagesRansac(object):
 
         self.key_frame_file = os.path.split(key_frame)[-1]
         self.output_dir = output_dir
-        self.find_face = find_face
+        self.face_params = faceParams
 
 
         # Open the directory given in the arguments
@@ -57,6 +57,8 @@ class AlignImagesRansac(object):
         # cv2.destroyAllWindows()
 
         final_img = self.stitchImages(base_img_rgb, 0)
+        final_filename = "%s/%s.JPG" % (self.output_dir, "FINAL")
+        cv2.imwrite(final_filename, final_img)
 
 
 
@@ -82,17 +84,47 @@ class AlignImagesRansac(object):
         # Our operations on the frame come here
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-
         cascade = cv2.CascadeClassifier("cascade/haar.xml")
         # Detect object in the image
 
+        optimalValues = self.face_params[0]
+
         faces = cascade.detectMultiScale(
             gray,
-            scaleFactor=1.7,
-            minNeighbors=5,
-            minSize=(50, 50),
+            scaleFactor=optimalValues[0],
+            minNeighbors=optimalValues[1],
+            minSize=(30, 30),
             flags = cv2.cv.CV_HAAR_SCALE_IMAGE
         )
+
+
+        if len(faces) == 0:
+            print "Found no faces, running new params"
+            minValues = self.face_params[1]
+            maxValues = self.face_params[2]
+            scale = minValues[0]
+            neighbors = minValues[1]
+            while scale <= maxValues[0]:
+                while neighbors <= maxValues[1]:
+
+                    faces = cascade.detectMultiScale(
+                        gray,
+                        scaleFactor=scale,
+                        minNeighbors=neighbors,
+                        minSize=(30, 30),
+                        flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+                    )
+                    print "\t trying: ", (scale,neighbors)
+                    if len(faces) == 1:
+                        print "Found face with values: ", scale, " ", neighbors
+                        break
+                    neighbors += 1
+                scale += .1
+                neighbors = minValues[1]
+
+                if len(faces) == 1:
+                        break
+
 
         print "Found {0} objects!".format(len(faces))
         return faces
@@ -331,10 +363,11 @@ class AlignImagesRansac(object):
             # enlarged_base_img[y:y+base_img_rgb.shape[0],x:x+base_img_rgb.shape[1]] = base_img_rgb
             # enlarged_base_img[:base_img_warp.shape[0],:base_img_warp.shape[1]] = base_img_warp
 
-            if self.find_face:
+            if self.face_params is not None:
                 #find face code here
                 faces = self.findFace(next_img_warp)
                 if len(faces) == 0:
+                    cv2.imwrite("images/temp/errar/errar_" + str(round) + ".jpg")
                     return self.stitchImages(base_img_rgb, round+1)
 
                 x, y, w, h = faces[0]
